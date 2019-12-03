@@ -4,6 +4,8 @@
 #include<queue>
 #include<chrono>
 
+#define CACHEMISS 2000
+
 using namespace std;
 
 class Cache
@@ -24,4 +26,6 @@ public:
 	double FIFO();
 	double LFU();
 	double RAND();
+	double AVERAGE();
 };
+
