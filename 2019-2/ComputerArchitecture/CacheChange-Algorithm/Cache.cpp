@@ -29,10 +29,6 @@ void Cache::Input()
 		data.push_back(num);*/
 		data.push_back(rand() % 10 + 1);
 	}
-	/*LRU();
-	FIFO();
-	LFU();
-	RAND();*/
 }
 
 void Cache::Menu()
@@ -40,7 +36,7 @@ void Cache::Menu()
 	int select = -1;
 	while (true)
 	{
-		cout << "1. LRU  2. FIFO  3. LFU  4. RANDOM  5. Test Case 초기화  6. 종료  ==>";
+		cout << "1. LRU  2. FIFO  3. LFU  4. RANDOM  5. AVERAGE  6. Test Case 초기화  7. 종료  ==>";
 		cin >> select;
 		switch (select)
 		{
@@ -57,10 +53,13 @@ void Cache::Menu()
 			RAND();
 			break;
 		case 5:
+			AVERAGE();
+			break;
+		case 6:
 			Input();
 			break;
 		}
-		if (select < 1 || select>5)
+		if (select < 1 || select>6)
 			break;
 	}
 	cout << "프로그램을 종료합니다." << endl;
@@ -83,6 +82,9 @@ double Cache::Print(const int& count, const int& type, const long long& running_
 	case 3:
 		cout << "Random Change Algorithm" << endl;
 		break;
+	case 4:
+		cout << "Ourselves made Algorithm" << endl;
+		break;
 	}
 	cout << "데이터 세트 =>" << endl;
 	for (int i : data) cout << i << "  ";
@@ -91,7 +93,9 @@ double Cache::Print(const int& count, const int& type, const long long& running_
 	cout << "적중 횟수 : " << count << endl;
 	cout.precision(6);
 	cout << "적중률 : " << (double)count / (double)data.size() << endl;
-	cout << "수행 시간 : " << running_time << "ns" << endl;
+	cout << "수행 시간 (캐시 적중, 실패 고려x) : " << running_time << "ns" << endl;
+	long long running_time2 = running_time + ((long long)data.size() - count) * CACHEMISS;
+	cout << "수행 시간 (캐시 적중, 실패 고려o) : " << running_time2 << "ns" << endl;
 	cout << "=============================================" << endl;
 
 	return (double)count / (double)data.size();
@@ -181,8 +185,9 @@ double Cache::LRU()
 		// 슬롯에 원하는 데이터가 없는 경우 데이터를 새로 적재
 		if (index == -1)
 		{
-			slot[max_index].first = 0;
-			slot[max_index].second = data[i];
+			slot[max_index] = make_pair(0, data[i]);
+			/*slot[max_index].first = 0;
+			slot[max_index].second = data[i];*/
 		}
 	}
 
@@ -273,8 +278,9 @@ double Cache::LFU()
 				}
 			}
 			// 찾은 인덱스에 새로운 값을 적재, use bit 를 1 로 초기화 함
-			slot[min_index].first = 1;
-			slot[min_index].second = data[i];
+			slot[min_index] = make_pair(1, data[i]);
+			/*slot[min_index].first = 1;
+			slot[min_index].second = data[i];*/
 		}
 		// 캐시 적중한 경우
 		else
@@ -324,4 +330,103 @@ double Cache::RAND()
 
 	chrono::system_clock::time_point end = chrono::system_clock::now();
 	return Print(count, 3, (end - start).count());
+}
+
+/*
+참조할 데이터가 use bit의 누적 평균값에 몰려있다고 가정하고 만든 알고리즘
+*/
+double Cache::AVERAGE()
+{
+	chrono::system_clock::time_point start = chrono::system_clock::now();
+
+	// pair 의 first -> use bit		/ pair 의 second -> data
+	vector<pair<int, int>> slot(this->size, make_pair(0, -1));
+	/* 
+	total : 참조한 데이터의 개수
+	sum : 참조한 데이터들의 use bit의 누적 합
+	average : 참조한 데이터들의 use bit의 누적 평균값
+	count : 캐시 적중한 횟수
+	*/
+	int total = 0, sum = 0, average = 0;
+	int count = 0;
+
+	for (int i = 0; i < data.size(); i++)
+	{
+		int index = -1;
+		// 슬롯 탐색
+		for (int k = 0; k < slot.size(); k++)
+		{
+			if (data[i] == slot[k].second)
+			{
+				index = k;
+				count++;
+				slot[k].first++, sum++;
+				break;
+			}
+		}
+
+		// 캐시 미스난 경우
+		if (index == -1)
+		{
+			/*
+			change_index : 데이터를 적재할 곳의 인덱스
+			change_value : 인덱스를 찾기 위해 사용되는 변수
+			*/
+			int change_value = 0;
+			vector<int> equal;
+
+			// 새롭게 데이터를 적재할 위치를 찾음
+			for (int k = 0; k < slot.size(); k++)
+			{
+				if (change_value < abs(average - slot[k].first))
+				{
+					equal.clear();
+					equal.push_back(k);
+					change_value = abs(average - slot[k].first);
+				}
+				else if (change_value == abs(average - slot[k].first))
+				{
+					equal.push_back(k);
+				}
+			}
+
+			/*
+			이미 적재되어 있는 데이터들을 앞으로 한칸씩 당겨옴
+			average - use bit 의 절대값이 같은 경우에 FIFO 처럼 구현하기 위함
+			*/
+			if (equal[0] != slot.size() - 1)
+			{
+				for (int k = equal[0] + 1; k < slot.size(); k++)
+				{
+					slot[k - 1] = slot[k];
+				}
+			}
+			
+			// 새로운 데이터를 항상 맨 마지막 슬롯에 적재해줌 -> FIFO 구조 구현
+			slot[slot.size() - 1] = make_pair(0, data[i]);
+			
+			// 데이터를 새로 적재함에 따라 누적 평균 값 다시 계산
+			total++;
+			average = sum / total;
+		}
+		// 캐시 적중한 경우 -> 평균 값만 다시 계산하면 됨
+		else
+		{
+			average = sum / total;
+		}
+
+		/*
+		이하 주석 6줄은 참조할 데이터들이 알고리즘이 유도한 방식대로
+		올바르게 적재되고 제거되는지 확인하기 위한 코드입니다.
+		*/
+		/*cout << i + 1 << "번째 데이터 참조한 결과" << endl;
+		for (int k = 0; k < slot.size(); k++)
+		{
+			cout << slot[k].first << ",  " << slot[k].second << endl;
+		}
+		cout << endl;*/
+	}
+
+	chrono::system_clock::time_point end = chrono::system_clock::now();
+	return Print(count, 4, (end - start).count());
 }
