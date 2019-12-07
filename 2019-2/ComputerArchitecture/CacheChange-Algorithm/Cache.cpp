@@ -277,16 +277,26 @@ double Cache::LFU()
 					min_index = k;
 				}
 			}
-			// 찾은 인덱스에 새로운 값을 적재, use bit 를 1 로 초기화 함
-			slot[min_index] = make_pair(1, data[i]);
-			/*slot[min_index].first = 1;
-			slot[min_index].second = data[i];*/
+
+			// min_index 뒤에 있는 값들을 앞으로 한 칸씩 당겨옴
+			for (int k = min_index + 1; k < slot.size(); k++)
+			{
+				slot[k - 1] = slot[k];
+			}
+			// 맨 뒤에 새로운 값을 적재, use bit 를 1 로 초기화 함
+			slot[slot.size() - 1] = make_pair(1, data[i]);
 		}
 		// 캐시 적중한 경우
 		else
 		{
 			slot[index].first++;
 		}
+		/*cout << i + 1 << "번째 데이터 참조한 결과" << endl;
+		for (int k = 0; k < slot.size(); k++)
+		{
+			cout << slot[k].first << ",  " << slot[k].second << endl;
+		}
+		cout << endl;*/
 	}
 
 	chrono::system_clock::time_point end = chrono::system_clock::now();
@@ -334,6 +344,7 @@ double Cache::RAND()
 
 /*
 참조할 데이터가 use bit의 누적 평균값에 몰려있다고 가정하고 만든 알고리즘
+수정해야함 (2019년 12월 07일 20:35 작성)
 */
 double Cache::AVERAGE()
 {
