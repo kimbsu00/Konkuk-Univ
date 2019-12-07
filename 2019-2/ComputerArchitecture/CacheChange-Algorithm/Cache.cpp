@@ -344,7 +344,6 @@ double Cache::RAND()
 
 /*
 참조할 데이터가 use bit의 누적 평균값에 몰려있다고 가정하고 만든 알고리즘
-수정해야함 (2019년 12월 07일 20:35 작성)
 */
 double Cache::AVERAGE()
 {
@@ -352,90 +351,68 @@ double Cache::AVERAGE()
 
 	// pair 의 first -> use bit		/ pair 의 second -> data
 	vector<pair<int, int>> slot(this->size, make_pair(0, -1));
-	/* 
+	/*
 	total : 참조한 데이터의 개수
 	sum : 참조한 데이터들의 use bit의 누적 합
 	average : 참조한 데이터들의 use bit의 누적 평균값
 	count : 캐시 적중한 횟수
+	fill_ind : 어느 캐쉬까지 저장됬는지 저장하는 인덱스 값
 	*/
 	int total = 0, sum = 0, average = 0;
 	int count = 0;
+	unsigned int fill_ind = 0;
 
-	for (int i = 0; i < data.size(); i++)
+	for (int d : data) // d <- 이번의 데이터 값
 	{
-		int index = -1;
-		// 슬롯 탐색
-		for (int k = 0; k < slot.size(); k++)
-		{
-			if (data[i] == slot[k].second)
-			{
-				index = k;
-				count++;
-				slot[k].first++, sum++;
+		//Cache Miss Check
+		unsigned int i;
+		for (i = 0; i < slot.size(); i++)
+			if (d == slot[i].second)
 				break;
+
+		if (i == slot.size()) // Cache Missed
+		{
+			if (fill_ind == slot.size()) // 빈 장소가 없음
+			{
+				unsigned int ind = 0;
+				int val = -1;
+
+				// 평균에서 거리가 가장 먼 원소 탐색
+				for (unsigned int j = 0; j < slot.size(); j++)
+				{
+					int temp = (slot[j].second > average) ? (slot[j].second - average) : (average - slot[j].second);
+
+					if (temp >= val)
+					{
+						ind = j;
+						val = temp;
+					}
+				}
+
+				pair<int, int> old = slot[ind];
+				slot[ind] = pair<int, int>(1, d);
+
+				sum += d - (old.first * old.second);
+				total += 1 - old.first;
+			}
+
+			else // 빈 장소가 있음
+			{
+				slot[fill_ind++] = pair<int, int>(1, d);
+				sum += d;
+				total++;
 			}
 		}
 
-		// 캐시 미스난 경우
-		if (index == -1)
+		else // No Cache Missed
 		{
-			/*
-			change_index : 데이터를 적재할 곳의 인덱스
-			change_value : 인덱스를 찾기 위해 사용되는 변수
-			*/
-			int change_value = 0;
-			vector<int> equal;
-
-			// 새롭게 데이터를 적재할 위치를 찾음
-			for (int k = 0; k < slot.size(); k++)
-			{
-				if (change_value < abs(average - slot[k].first))
-				{
-					equal.clear();
-					equal.push_back(k);
-					change_value = abs(average - slot[k].first);
-				}
-				else if (change_value == abs(average - slot[k].first))
-				{
-					equal.push_back(k);
-				}
-			}
-
-			/*
-			이미 적재되어 있는 데이터들을 앞으로 한칸씩 당겨옴
-			average - use bit 의 절대값이 같은 경우에 FIFO 처럼 구현하기 위함
-			*/
-			if (equal[0] != slot.size() - 1)
-			{
-				for (int k = equal[0] + 1; k < slot.size(); k++)
-				{
-					slot[k - 1] = slot[k];
-				}
-			}
-			
-			// 새로운 데이터를 항상 맨 마지막 슬롯에 적재해줌 -> FIFO 구조 구현
-			slot[slot.size() - 1] = make_pair(0, data[i]);
-			
-			// 데이터를 새로 적재함에 따라 누적 평균 값 다시 계산
+			slot[i].first++;
+			sum += d;
 			total++;
-			average = sum / total;
-		}
-		// 캐시 적중한 경우 -> 평균 값만 다시 계산하면 됨
-		else
-		{
-			average = sum / total;
+			count++;
 		}
 
-		/*
-		이하 주석 6줄은 참조할 데이터들이 알고리즘이 유도한 방식대로
-		올바르게 적재되고 제거되는지 확인하기 위한 코드입니다.
-		*/
-		/*cout << i + 1 << "번째 데이터 참조한 결과" << endl;
-		for (int k = 0; k < slot.size(); k++)
-		{
-			cout << slot[k].first << ",  " << slot[k].second << endl;
-		}
-		cout << endl;*/
+		average = sum / total;
 	}
 
 	chrono::system_clock::time_point end = chrono::system_clock::now();
