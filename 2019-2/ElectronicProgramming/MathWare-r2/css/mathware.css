@@ -1,0 +1,115 @@
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+
+/* HTML5 display-role reset for older browsers */
+
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+
+body {
+    line-height: 1;
+}
+
+ol, ul {
+    list-style: none;
+}
+
+blockquote, q {
+    quotes: none;
+}
+
+blockquote:before, blockquote:after, q:before, q:after {
+    content: '';
+    content: none;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/*위는 초기화 코드*/
+
+body {
+    width: 1080px;
+    margin: 0 auto;
+    font-family: 'Nanum Gothic Coding', sans-serif;
+    background-color: #eee;
+}
+
+header {
+    margin-top: 30px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 30px;
+}
+
+header+p {
+    float: right;
+    margin-bottom: 20px;
+}
+
+textarea {
+    line-height: 1;
+    resize: none;
+    width: 1080px;
+    height: 175px;
+    font-size: 17px;
+}
+
+.input_section {
+    display: inline-block;
+    margin: 0 auto;
+    font-family: 'Nanum Gothic Coding', sans-serif;
+}
+
+.mathml_section {
+    font-family: 'Nanum Gothic', sans-serif;
+}
+
+.output_section {
+    overflow: auto;
+    margin-top: 10px;
+}
+
+/*자동완성 팝업*/
+
+.autoComplete_section {
+    /* display: inline-block; */
+    /* overflow: hidden; */
+    display: none;
+}
+
+.autoComplete_section ul {
+    width: 120px;
+    height: 200px;
+}
+
+.autoComplete_section ul li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 5px;
+}
+.autoComplete_section ul li{
+    background-color: navy;
+    color: whitesmoke;
+}
+
+.autoComplete_section ul li:hover {
+    background-color: black !important;
+    color: white !important;
+    font-weight: bold;
+    cursor: pointer;
+}
+.focused{
+    background-color: black;
+    color: white;
+    cursor: pointer;
+}
