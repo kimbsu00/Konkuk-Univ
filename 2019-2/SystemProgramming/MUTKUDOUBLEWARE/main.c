@@ -488,5 +488,6 @@ int main()
       tmp2[0] = '/';
       write(fd, tmp2, sizeof(char));
    }
+   close(fd);
    return 0;
 }
