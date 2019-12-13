@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
    int fd = open("./test.dat", O_RDONLY);
     if(fd==-1)
         printf("open_error\n");
-    char buf[1];
+    char buf[255];
     int size = 0;
 
    struct itimerval set_time_val, get_time_val;
@@ -44,17 +44,20 @@ int main(int argc, char *argv[])
    {
       lseek(fd, 0, SEEK_SET);
       size = 0;
-      while (size += read(fd, buf, 1), size == -1 && errno == EINTR){
-         if(buf[0] == '\0')
-            break;
+      while (size += read(fd, buf, 255), size == -1 && errno == EINTR);
+      int pos = size;
+      for(int i = 0 ; i<size;i++){
+          if (!(buf[i] >= '0' && buf[i] <= '9')){
+            pos--;
+          }
       }
 
       printf("\033[%d;%df", 19, 35);
       printf("time : %d", get_time_val.it_value.tv_sec);
-      printf("\033[%d;%df", 20, 35);
-      printf("Please bet!(enter integer)");
+      printf("\033[%d;%df", 20, 30);
+      printf("베팅하실 금액을 적어주세요(한도:200)");
       fflush(stdout);
-      printf("\033[%d;%df", 21, 35+size);
+      printf("\033[%d;%df", 21, 35+pos);
       fflush(stdout);
       sleep(1);
    }
